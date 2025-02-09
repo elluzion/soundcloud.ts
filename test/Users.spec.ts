@@ -5,7 +5,7 @@ import { soundcloud } from "./login";
 describe("Users", function () {
   it("should get a user", async function () {
     const response = await soundcloud.users.get(
-      "https://soundcloud.com/yourparadis",
+      "https://soundcloud.com/nocopyrightsounds",
     );
     assert(Object.prototype.hasOwnProperty.call(response, "description"));
   });
@@ -29,14 +29,14 @@ describe("Users", function () {
 
   it("should get user likes", async function () {
     const response = await soundcloud.users.likes(
-      "https://soundcloud.com/yourparadis",
+      "https://soundcloud.com/nocopyrightsounds",
     );
     assert(Object.prototype.hasOwnProperty.call(response[0], "title"));
   });
 
   it("should get a users web profiles", async function () {
     const response = await soundcloud.users.webProfiles(
-      "https://soundcloud.com/yourparadis",
+      "https://soundcloud.com/nocopyrightsounds",
     );
     assert(Object.prototype.hasOwnProperty.call(response[0], "url"));
   });

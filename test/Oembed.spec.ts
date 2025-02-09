@@ -7,6 +7,6 @@ describe("Oembed", function () {
     const response = await soundcloud.oembed.get({
       url: "https://soundcloud.com/official-kaijo/space-junk",
     });
-    assert(typeof response === "string");
+    assert(typeof response === "object");
   });
 });
