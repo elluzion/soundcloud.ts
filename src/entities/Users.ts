@@ -44,16 +44,18 @@ export class Users {
       await this.api.getV2(`/users/${userID}/tracks`)
     );
     let nextHref = response.next_href;
+
     while (nextHref) {
       const url = new URL(nextHref);
       const params = {};
       url.searchParams.forEach((value, key) => (params[key] = value));
       const nextPage = <SoundcloudTrackSearch>(
-        await this.api.getURL(url.origin + url.pathname, params)
+        await this.api.getV2(url.pathname, params)
       );
       response.collection.push(...nextPage.collection);
       nextHref = nextPage.next_href;
     }
+
     return response.collection as SoundcloudTrack[];
   };
 
@@ -62,21 +64,25 @@ export class Users {
    */
   public likes = async (userResolvable: string | number, limit?: number) => {
     const userID = await this.resolve.get(userResolvable);
+    const tracks: SoundcloudTrack[] = [];
+
     let response = (await this.api.getV2(`/users/${userID}/likes`, {
       limit: 50,
       offset: 0,
-    })) as any;
-    const tracks: SoundcloudTrack[] = [];
-    let nextHref = response.next_href;
-    while (nextHref && (!limit || tracks.length < limit)) {
+    })) as SoundcloudTrackSearch;
+
+    while (response.next_href && (!limit || tracks.length < limit)) {
       tracks.push(...response.collection.map((r: any) => r.track));
-      const url = new URL(nextHref);
-      const params = {};
+      const url = new URL(response.next_href);
+      const params: Record<string, string> = {};
       url.searchParams.forEach((value, key) => (params[key] = value));
-      response = await this.api.getURL(url.origin + url.pathname, params);
-      nextHref = response.next_href;
+      response = (await this.api.getV2(
+        url.pathname,
+        params,
+      )) as SoundcloudTrackSearch;
     }
-    return tracks;
+
+    return tracks.slice(0, limit);
   };
 
   /**

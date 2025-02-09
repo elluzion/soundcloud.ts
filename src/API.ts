@@ -1,5 +1,3 @@
-import { Dispatcher, Pool, request } from "undici";
-
 const apiURL = "https://api.soundcloud.com";
 const apiV2URL = "https://api-v2.soundcloud.com";
 const webURL = "https://soundcloud.com";
@@ -12,22 +10,11 @@ export class API {
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.67",
   };
 
-  public api: Pool;
-  public apiV2: Pool;
-  public web: Pool;
-  public proxy?: Pool;
-
   constructor(
     public clientId?: string,
     public oauthToken?: string,
-    proxy?: string,
   ) {
-    this.api = new Pool(apiURL);
-    this.apiV2 = new Pool(apiV2URL);
-    this.web = new Pool(webURL);
-
     if (oauthToken) API.headers.Authorization = `OAuth ${oauthToken}`;
-    if (proxy) this.proxy = new Pool(proxy);
   }
 
   get headers() {
@@ -35,76 +22,77 @@ export class API {
   }
 
   public getV2(endpoint: string, params?: Record<string, any>) {
-    return this.getRequest(this.apiV2, apiV2URL, endpoint, params);
+    return this.getRequest(apiV2URL, endpoint, params);
   }
 
   public getWebsite(endpoint: string, params?: Record<string, any>) {
-    return this.getRequest(this.web, webURL, endpoint, params);
+    return this.getRequest(webURL, endpoint, params);
   }
 
-  public getURL(URI: string, params?: Record<string, any>) {
-    if (this.proxy) {
-      return this.request(this.proxy, this.buildOptions(URI, "GET", params));
-    }
-
-    const options = this.buildOptions(URI, "GET", params);
-    return request(URI, options).then(this.handleResponse);
+  public async getURL(URI: string, params?: Record<string, any>) {
+    const response = await this.request(URI, "GET", params);
+    const data = await this.handleResponse(response);
+    return data;
   }
 
-  private buildOptions(
-    path: string,
-    method: Dispatcher.HttpMethod = "GET",
+  private buildRequestOptions(
+    method: "GET" | "POST",
     params?: Record<string, any>,
-  ): Dispatcher.RequestOptions {
-    const options: Dispatcher.RequestOptions = {
-      query: method === "GET" ? params : {},
-      headers: API.headers,
-      method,
-      path,
-      maxRedirections: 5,
-    };
+  ): RequestInit {
+    const headers = new Headers(API.headers);
+    let body = undefined;
 
-    if (method === "POST" && params) options.body = JSON.stringify(params);
-    if (this.clientId) options.query.client_id = this.clientId;
-    if (this.oauthToken) options.query.oauth_token = this.oauthToken;
-
-    return options;
-  }
-
-  private request(pool: Pool, options: Dispatcher.RequestOptions) {
-    return pool.request(options).then(this.handleResponse);
-  }
-
-  private handleResponse(response: Dispatcher.ResponseData) {
-    if (response.statusCode.toString().startsWith("2")) {
-      if (response.headers["content-type"].includes("application/json")) {
-        return response.body.json();
-      }
-      return response.body.text();
+    if (method === "POST" && params) {
+      body = JSON.stringify(params);
+      headers.set("Content-Type", "application/json");
     }
-    throw new Error(`Status code ${response.statusCode}`);
+
+    return { method, headers, body };
+  }
+
+  private async request(
+    url: string,
+    method: "GET" | "POST",
+    params?: Record<string, any>,
+  ) {
+    const options = this.buildRequestOptions(method, params);
+    const _url = new URL(url);
+
+    if (method === "GET" && params) {
+      _url.search = new URLSearchParams(params).toString();
+    }
+
+    if (this.clientId) _url.searchParams.set("client_id", this.clientId);
+    if (this.oauthToken) _url.searchParams.set("oauth_token", this.oauthToken);
+
+    const response = await fetch(_url, options);
+    return await this.handleResponse(response);
+  }
+
+  private async handleResponse(response: Response) {
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+    if (response.headers.get("content-type")?.includes("application/json")) {
+      return response.json();
+    } else {
+      return response.text();
+    }
   }
 
   private async getRequest(
-    pool: Pool,
-    origin: string,
+    url: string,
     endpoint: string,
     params?: Record<string, any>,
   ) {
     if (!this.clientId) await this.getClientId();
     if (endpoint.startsWith("/")) endpoint = endpoint.slice(1);
 
-    const options = this.buildOptions(
-      `${this.proxy ? origin : ""}/${endpoint}`,
-      "GET",
-      params,
-    );
-
     try {
-      return await this.request(this.proxy || pool, options);
+      return await this.request(`${url}/${endpoint}`, "GET", params);
     } catch {
       await this.getClientId(true);
-      return this.request(this.proxy || pool, options);
+      return this.request(`${url}/${endpoint}`, "GET", params);
     }
   }
 
@@ -112,20 +100,11 @@ export class API {
     if (!this.clientId) await this.getClientId();
     if (endpoint.startsWith("/")) endpoint = endpoint.slice(1);
 
-    const options = this.buildOptions(
-      `${this.proxy ? origin : ""}/${endpoint}`,
-      "POST",
-      params,
-    );
-
-    return this.request(this.proxy || this.api, options);
+    return this.request(`${apiURL}/${endpoint}`, "POST", params);
   }
 
   public async getClientIdWeb() {
-    const response = await this.request(
-      this.proxy || this.web,
-      this.buildOptions(this.proxy ? webURL : "/"),
-    );
+    const response = await this.request(webURL, "POST");
 
     if (!response || typeof response !== "string") {
       throw new Error("Could not find client ID");
@@ -140,9 +119,7 @@ export class API {
     }
 
     for (const url of urls) {
-      const script = await (this.proxy
-        ? this.request(this.proxy, this.buildOptions(url))
-        : fetch(url).then((r) => r.text()));
+      const script = await fetch(url).then((r) => r.text());
 
       if (script && typeof script === "string") {
         const clientId = script.match(/[{,]client_id:"(\w+)"/)?.[1];
