@@ -1,6 +1,6 @@
 {
-  "name": "soundcloud.ts",
-  "version": "0.6.2",
+  "name": "@elluzion/soundcloud.ts",
+  "version": "0.6.3",
   "description": "Soundcloud API v2 wrapper with typings.",
   "main": "dist/soundcloud.js",
   "types": "dist/soundcloud.d.ts",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Moebits/soundcloud.ts"
+    "url": "git+https://github.com/Moebits/soundcloud.ts.git"
   },
   "keywords": [
     "soundcloud",
@@ -33,7 +33,6 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "undici": "^6.17.0",
     "prettier": "^3.5.0"
   },
   "devDependencies": {
@@ -46,5 +45,16 @@
     "ts-mocha": "^10.0.0",
     "typedoc": "^0.25.13",
     "typescript": "^5.4.5"
+  },
+  "bugs": {
+    "url": "https://github.com/Moebits/soundcloud.ts/issues"
+  },
+  "homepage": "https://github.com/Moebits/soundcloud.ts#readme",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   }
 }

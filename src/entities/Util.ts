@@ -2,7 +2,6 @@ import { spawnSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { Readable } from "stream";
-import { request } from "undici";
 import { API } from "../API";
 import type { SoundcloudTrack, SoundcloudTranscoding } from "../types";
 import { Playlists, Tracks, Users } from "./index";
@@ -60,8 +59,8 @@ export class Util {
       ? `&client_id=${client_id}`
       : `?client_id=${client_id}`;
     try {
-      return await request(url + connect, { headers })
-        .then((r) => r.body.json())
+      return await fetch(url + connect, { headers })
+        .then((r) => r.json())
         .then((r) => (<{ url: string }>r).url);
     } catch {
       client_id = await this.api.getClientId(true);
@@ -69,8 +68,8 @@ export class Util {
         ? `&client_id=${client_id}`
         : `?client_id=${client_id}`;
       try {
-        return await request(url + connect, { headers })
-          .then((r) => r.body.json())
+        return await fetch(url + connect, { headers })
+          .then((r) => r.json())
           .then((r) => (<{ url: string }>r).url);
       } catch {
         return null;
@@ -184,10 +183,10 @@ export class Util {
     const connect = transcoding.url.includes("?")
       ? `&client_id=${client_id}`
       : `?client_id=${client_id}`;
-    const m3uLink = await request(transcoding.url + connect, {
+    const m3uLink = await fetch(transcoding.url + connect, {
       headers: this.api.headers,
     })
-      .then((r) => r.body.json())
+      .then((r) => r.json())
       .then((r) => (<{ url: string }>r).url);
     const destDir = path.join(__dirname, `tmp_${temp++}`);
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
@@ -219,14 +218,12 @@ export class Util {
         return this.m3uReadableStream(trackResolvable);
       }
     } else {
-      const m3u = await request(m3uLink, { headers }).then((r) =>
-        r.body.text(),
-      );
+      const m3u = await fetch(m3uLink, { headers }).then((r) => r.text());
       const urls = m3u.match(/(http).*?(?=\s)/gm);
       const chunks: string[] = [];
       for (let i = 0; i < urls.length; i++) {
-        const arrayBuffer = await request(urls[i], { headers }).then((r) =>
-          r.body.arrayBuffer(),
+        const arrayBuffer = await fetch(urls[i], { headers }).then((r) =>
+          r.arrayBuffer(),
         );
         const chunkPath = path.join(destDir, `${i}.${transcoding.type}`);
         fs.writeFileSync(chunkPath, Buffer.from(arrayBuffer));
@@ -249,7 +246,7 @@ export class Util {
     title: string,
     dest: string,
   ) => {
-    let result: { stream: NodeJS.ReadableStream; type: string };
+    let result: { stream: any; type: string };
     const track = await this.resolveTrack(trackResolvable);
     const transcodings = await this.sortTranscodings(track, "progressive");
     if (!transcodings.length) {
@@ -258,7 +255,7 @@ export class Util {
       const transcoding = transcodings[0];
       const url = await this.getStreamLink(transcoding);
       const headers = this.api.headers;
-      const stream = await request(url, { headers }).then((r) => r.body);
+      const stream = await fetch(url, { headers }).then((r) => r.body);
       const type = transcoding.format.mime_type.startsWith(
         'audio/mp4; codecs="mp4a',
       )
@@ -293,14 +290,14 @@ export class Util {
         const downloadObj = (await this.api.getV2(
           `/tracks/${track.id}/download`,
         )) as any;
-        const result = await request(downloadObj.redirectUri);
+        const result = await fetch(downloadObj.redirectUri);
         dest = path.extname(dest)
           ? dest
           : path.join(
               dest,
               `${track.title.replace(/[\\/:*?\"<>|]/g, "")}.${result.headers["x-amz-meta-file-type"]}`,
             );
-        const arrayBuffer = (await result.body.arrayBuffer()) as any;
+        const arrayBuffer = (await result.arrayBuffer()) as any;
         fs.writeFileSync(dest, Buffer.from(arrayBuffer, "binary"));
         return dest;
       } catch {
@@ -381,12 +378,12 @@ export class Util {
    */
   public streamTrack = async (
     trackResolvable: string | SoundcloudTrack,
-  ): Promise<NodeJS.ReadableStream> => {
+  ): Promise<any> => {
     const url = await this.streamLink(trackResolvable, "progressive");
     if (!url)
       return this.m3uReadableStream(trackResolvable).then((r) => r.stream);
-    const readable = await request(url, { headers: this.api.headers }).then(
-      (r) => r.body,
+    const readable = await fetch(url, { headers: this.api.headers }).then((r) =>
+      r.body.getReader(),
     );
     return readable;
   };
@@ -413,7 +410,7 @@ export class Util {
     const client_id = await this.api.getClientId();
     const url = `${artwork}?client_id=${client_id}`;
     if (noDL) return url;
-    const arrayBuffer = await request(url).then((r) => r.body.arrayBuffer());
+    const arrayBuffer = await fetch(url).then((r) => r.arrayBuffer());
     fs.writeFileSync(dest, Buffer.from(arrayBuffer));
     return dest;
   };

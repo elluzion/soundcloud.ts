@@ -1,4 +1,3 @@
-import { request } from "undici";
 import { URL } from "url";
 import { API } from "../API";
 import type {
@@ -101,19 +100,17 @@ export class Users {
    */
   public searchAlt = async (query: string) => {
     const headers = this.api.headers;
-    const html = await request(
+    const html = await fetch(
       `https://soundcloud.com/search/people?q=${query}`,
       { headers },
-    ).then((r) => r.body.text());
+    ).then((r) => r.text());
     const urls = html
       .match(/(?<=<li><h2><a href=")(.*?)(?=">)/gm)
       ?.map((u: any) => `https://soundcloud.com${u}`);
     if (!urls) return [];
     const scrape: any = [];
     for (let i = 0; i < urls.length; i++) {
-      const songHTML = await request(urls[i], { headers }).then((r) =>
-        r.body.text(),
-      );
+      const songHTML = await fetch(urls[i], { headers }).then((r) => r.text());
       const json = JSON.parse(songHTML.match(/(\[{)(.*)(?=;)/gm)[0]);
       const user = json[json.length - 1].data;
       scrape.push(user);
@@ -128,7 +125,7 @@ export class Users {
     if (!url.startsWith("https://soundcloud.com/"))
       url = `https://soundcloud.com/${url}`;
     const headers = this.api.headers;
-    const songHTML = await request(url, { headers }).then((r) => r.body.text());
+    const songHTML = await fetch(url, { headers }).then((r) => r.text());
     const json = JSON.parse(songHTML.match(/(\[{)(.*)(?=;)/gm)[0]);
     const user = json[json.length - 1].data;
     return user as Promise<SoundcloudUser>;

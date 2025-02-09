@@ -1,4 +1,3 @@
-import { request } from "undici";
 import { API } from "../API";
 
 export class Resolve {
@@ -16,9 +15,9 @@ export class Resolve {
     }
     let id = resolvable;
     if (String(resolvable).includes("soundcloud")) {
-      const html = await request(String(resolvable), {
+      const html = await fetch(String(resolvable), {
         headers: this.api.headers,
-      }).then((r) => r.body.text());
+      }).then((r) => r.text());
       const data = JSON.parse(html.match(/(\[{"id")(.*?)(?=\);)/)?.[0]);
       id = data[data.length - 1]?.data?.[0]?.id
         ? data[data.length - 1].data[0].id
