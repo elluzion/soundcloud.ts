@@ -1,5 +1,5 @@
 import { API } from "../API";
-import type { SoundcloudOembedFilter } from "../types";
+import type { SoundcloudOembed, SoundcloudOembedFilter } from "../types";
 
 export class Oembed {
   public constructor(private readonly api: API) {}
@@ -9,6 +9,6 @@ export class Oembed {
    */
   public get = async (params: SoundcloudOembedFilter) => {
     const response = await this.api.getWebsite("/oembed", params);
-    return response as Promise<string>;
+    return response as Promise<SoundcloudOembed>;
   };
 }

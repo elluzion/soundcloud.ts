@@ -19,10 +19,15 @@ const SOURCES: (() => string)[] = [
 ];
 
 export class Util {
-  private readonly tracks = new Tracks(this.api);
-  private readonly users = new Users(this.api);
-  private readonly playlists = new Playlists(this.api);
-  public constructor(private readonly api: API) {}
+  private readonly tracks: Tracks;
+  private readonly users: Users;
+  private readonly playlists: Playlists;
+
+  public constructor(private readonly api: API) {
+    this.tracks = new Tracks(this.api);
+    this.users = new Users(this.api);
+    this.playlists = new Playlists(this.api);
+  }
 
   private readonly resolveTrack = async (
     trackResolvable: string | SoundcloudTrack,

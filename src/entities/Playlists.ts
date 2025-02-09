@@ -8,10 +8,13 @@ import type {
 import { Resolve, Tracks } from "./index";
 
 export class Playlists {
-  private readonly tracks = new Tracks(this.api);
-  private readonly resolve = new Resolve(this.api);
-  public constructor(private readonly api: API) {}
+  private readonly tracks: Tracks;
+  private readonly resolve: Resolve;
 
+  public constructor(private readonly api: API) {
+    this.tracks = new Tracks(this.api);
+    this.resolve = new Resolve(this.api);
+  }
   /**
    * Return playlist with all tracks fetched.
    */

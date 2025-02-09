@@ -12,8 +12,11 @@ import type {
 import { Resolve } from "./index";
 
 export class Users {
-  private readonly resolve = new Resolve(this.api);
-  public constructor(private readonly api: API) {}
+  private readonly resolve: Resolve;
+
+  public constructor(private readonly api: API) {
+    this.resolve = new Resolve(this.api);
+  }
 
   /**
    * Searches for users using the v2 API.
