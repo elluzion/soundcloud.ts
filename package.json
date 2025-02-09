@@ -5,11 +5,11 @@
   "main": "dist/soundcloud.js",
   "types": "dist/soundcloud.d.ts",
   "scripts": {
-    "start": "tsc && node dist/start.js",
+    "start": "bun start.ts",
     "docs": "typedoc",
     "build": "tsc",
     "test": "ts-mocha --timeout 30000 -p tsconfig.json test/**/*.spec.ts",
-    "prepack": "npm run build"
+    "prepack": "bun run build"
   },
   "repository": {
     "type": "git",
