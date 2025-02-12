@@ -43,6 +43,9 @@ export interface SoundcloudTrack {
     urn: string;
     contains_music: boolean;
     id: number;
+    isrc: string | null;
+    publisher: string;
+    artist: string | null;
   };
   duration: number;
   has_downloads_left: boolean;
