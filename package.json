@@ -36,6 +36,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "ffmpeg-static": "^5.2.0",
     "prettier": "^3.5.0"
   },
   "devDependencies": {
