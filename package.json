@@ -30,7 +30,8 @@
   ],
   "author": "Moebits",
   "contributors": [
-    "Skick (https://github.com/skick1234)"
+    "Skick (https://github.com/skick1234)",
+    "elluzion (https://github.com/elluzion)"
   ],
   "license": "MIT",
   "dependencies": {
@@ -47,10 +48,6 @@
     "typedoc": "^0.25.13",
     "typescript": "^5.4.5"
   },
-  "bugs": {
-    "url": "https://github.com/Moebits/soundcloud.ts/issues"
-  },
-  "homepage": "https://github.com/Moebits/soundcloud.ts#readme",
   "directories": {
     "doc": "docs",
     "test": "test"
