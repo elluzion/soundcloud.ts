@@ -1,17 +1,18 @@
 import { spawnSync } from "child_process";
+import ffmpeg from "ffmpeg-static";
 import * as fs from "fs";
 import * as path from "path";
 import { Readable } from "stream";
 import { API } from "../API";
 import type { SoundcloudTrack, SoundcloudTranscoding } from "../types";
+import { M3uStream, TrackStream } from "../types/etc";
 import { Playlists, Tracks, Users } from "./index";
 
 let temp = 0;
 const FFMPEG = { checked: false, path: "" };
 const SOURCES: (() => string)[] = [
   () => {
-    const ffmpeg = require("ffmpeg-static");
-    return ffmpeg?.path ?? ffmpeg;
+    return ffmpeg;
   },
   () => "ffmpeg",
   () => "./ffmpeg",
@@ -61,7 +62,7 @@ export class Util {
     try {
       return await fetch(url + connect, { headers })
         .then((r) => r.json())
-        .then((r) => (<{ url: string }>r).url);
+        .then((r) => (r as { url: string }).url);
     } catch {
       client_id = await this.api.getClientId(true);
       connect = url.includes("?")
@@ -70,7 +71,7 @@ export class Util {
       try {
         return await fetch(url + connect, { headers })
           .then((r) => r.json())
-          .then((r) => (<{ url: string }>r).url);
+          .then((r) => (r as { url: string }).url);
       } catch {
         return null;
       }
@@ -128,7 +129,9 @@ export class Util {
         if (!version)
           throw new Error(`Malformed FFmpeg command using ${command}`);
         FFMPEG.path = command;
-      } catch {}
+      } catch (e) {
+        console.log(e.message);
+      }
     }
     FFMPEG.checked = true;
     if (!FFMPEG.path) {
@@ -154,7 +157,7 @@ export class Util {
    */
   private readonly m3uReadableStream = async (
     trackResolvable: string | SoundcloudTrack,
-  ): Promise<{ stream: NodeJS.ReadableStream; type: "m4a" | "mp3" }> => {
+  ): Promise<M3uStream> => {
     const track = await this.resolveTrack(trackResolvable);
     const transcodings = await this.sortTranscodings(track, "hls");
     if (!transcodings.length) throw "No transcodings found";
@@ -187,7 +190,7 @@ export class Util {
       headers: this.api.headers,
     })
       .then((r) => r.json())
-      .then((r) => (<{ url: string }>r).url);
+      .then((r) => (r as { url: string }).url);
     const destDir = path.join(__dirname, `tmp_${temp++}`);
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const output = path.join(destDir, `out.${transcoding.type}`);
@@ -231,9 +234,7 @@ export class Util {
       }
       await this.mergeFiles(chunks, output);
     }
-    const stream: NodeJS.ReadableStream = Readable.from(
-      fs.readFileSync(output),
-    );
+    const stream = Readable.from(fs.readFileSync(output));
     Util.removeDirectory(destDir);
     return { stream, type: transcoding.type };
   };
@@ -246,7 +247,7 @@ export class Util {
     title: string,
     dest: string,
   ) => {
-    let result: { stream: any; type: string };
+    let result: { stream: TrackStream; type: string };
     const track = await this.resolveTrack(trackResolvable);
     const transcodings = await this.sortTranscodings(track, "progressive");
     if (!transcodings.length) {
@@ -264,7 +265,7 @@ export class Util {
       result = { stream, type };
     }
 
-    const stream = result.stream;
+    const stream = result.stream as NodeJS.ReadableStream;
     const fileName = path.extname(dest)
       ? dest
       : path.join(dest, `${title}.${result.type}`);
@@ -287,30 +288,30 @@ export class Util {
     const track = await this.resolveTrack(trackResolvable);
     if (track.downloadable === true) {
       try {
-        const downloadObj = (await this.api.getV2(
+        const downloadObj = await this.api.getV2(
           `/tracks/${track.id}/download`,
-        )) as any;
+        );
         const result = await fetch(downloadObj.redirectUri);
         dest = path.extname(dest)
           ? dest
           : path.join(
               dest,
-              `${track.title.replace(/[\\/:*?\"<>|]/g, "")}.${result.headers["x-amz-meta-file-type"]}`,
+              `${track.title.replace(/[\\/:*?"<>|]/g, "")}.${result.headers["x-amz-meta-file-type"]}`,
             );
-        const arrayBuffer = (await result.arrayBuffer()) as any;
-        fs.writeFileSync(dest, Buffer.from(arrayBuffer, "binary"));
+        const arrayBuffer = await result.arrayBuffer();
+        fs.writeFileSync(dest, Buffer.from(arrayBuffer));
         return dest;
       } catch {
         return this.downloadTrackStream(
           track,
-          track.title.replace(/[\\/:*?\"<>|]/g, ""),
+          track.title.replace(/[\\/:*?"<>|]/g, ""),
           dest,
         );
       }
     } else {
       return this.downloadTrackStream(
         track,
-        track.title.replace(/[\\/:*?\"<>|]/g, ""),
+        track.title.replace(/[\\/:*?"<>|]/g, ""),
         dest,
       );
     }
@@ -376,9 +377,7 @@ export class Util {
   /**
    * Returns a readable stream to the track.
    */
-  public streamTrack = async (
-    trackResolvable: string | SoundcloudTrack,
-  ): Promise<any> => {
+  public streamTrack = async (trackResolvable: string | SoundcloudTrack) => {
     const url = await this.streamLink(trackResolvable, "progressive");
     if (!url)
       return this.m3uReadableStream(trackResolvable).then((r) => r.stream);
@@ -405,7 +404,7 @@ export class Util {
     )
       .replace(".jpg", ".png")
       .replace("-large", "-t500x500");
-    const title = track.title.replace(/[\\/:*?\"<>|]/g, "");
+    const title = track.title.replace(/[\\/:*?"<>|]/g, "");
     dest = path.extname(dest) ? dest : path.join(folder, `${title}.png`);
     const client_id = await this.api.getClientId();
     const url = `${artwork}?client_id=${client_id}`;

@@ -21,7 +21,11 @@ export class Users {
    * Searches for users using the v2 API.
    */
   public search = async (params?: SoundcloudUserFilter) => {
-    const response = await this.api.getV2("search/users", params);
+    const response = await this.api.getV2(
+      "search/users",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      params as Record<string, any>,
+    );
     return response as Promise<SoundcloudUserSearch>;
   };
 
@@ -39,18 +43,19 @@ export class Users {
    */
   public tracks = async (userResolvable: string | number) => {
     const userID = await this.resolve.get(userResolvable);
-    const response = <SoundcloudTrackSearch>(
-      await this.api.getV2(`/users/${userID}/tracks`)
-    );
+    const response = (await this.api.getV2(
+      `/users/${userID}/tracks`,
+    )) as SoundcloudTrackSearch;
     let nextHref = response.next_href;
 
     while (nextHref) {
       const url = new URL(nextHref);
       const params = {};
       url.searchParams.forEach((value, key) => (params[key] = value));
-      const nextPage = <SoundcloudTrackSearch>(
-        await this.api.getV2(url.pathname, params)
-      );
+      const nextPage = (await this.api.getV2(
+        url.pathname,
+        params,
+      )) as SoundcloudTrackSearch;
       response.collection.push(...nextPage.collection);
       nextHref = nextPage.next_href;
     }
@@ -71,6 +76,7 @@ export class Users {
     })) as SoundcloudTrackSearch;
 
     while (response.next_href && (!limit || tracks.length < limit)) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tracks.push(...response.collection.map((r: any) => r.track));
       const url = new URL(response.next_href);
       const params: Record<string, string> = {};
@@ -92,7 +98,7 @@ export class Users {
     const response = await this.api.getV2(
       `/users/soundcloud:users:${userID}/web-profiles`,
     );
-    return <SoundcloudWebProfile[]>response;
+    return response as SoundcloudWebProfile[];
   };
 
   /**
@@ -106,16 +112,17 @@ export class Users {
     ).then((r) => r.text());
     const urls = html
       .match(/(?<=<li><h2><a href=")(.*?)(?=">)/gm)
-      ?.map((u: any) => `https://soundcloud.com${u}`);
+      ?.map((u) => `https://soundcloud.com${u}`);
     if (!urls) return [];
-    const scrape: any = [];
-    for (let i = 0; i < urls.length; i++) {
-      const songHTML = await fetch(urls[i], { headers }).then((r) => r.text());
+
+    const scrape: SoundcloudUser[] = [];
+    for (const url of urls) {
+      const songHTML = await fetch(url, { headers }).then((r) => r.text());
       const json = JSON.parse(songHTML.match(/(\[{)(.*)(?=;)/gm)[0]);
       const user = json[json.length - 1].data;
       scrape.push(user);
     }
-    return scrape as Promise<SoundcloudUser[]>;
+    return scrape;
   };
 
   /**

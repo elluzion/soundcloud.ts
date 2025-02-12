@@ -1,9 +1,11 @@
+import { RequestParams } from "./types/etc";
+
 const apiURL = "https://api.soundcloud.com";
 const apiV2URL = "https://api-v2.soundcloud.com";
 const webURL = "https://soundcloud.com";
 
 export class API {
-  public static headers: Record<string, any> = {
+  public static headers: Record<string, string> = {
     Origin: "https://soundcloud.com",
     Referer: "https://soundcloud.com/",
     "User-Agent":
@@ -21,15 +23,15 @@ export class API {
     return API.headers;
   }
 
-  public getV2(endpoint: string, params?: Record<string, any>) {
+  public getV2(endpoint: string, params?: Record<string, RequestParams>) {
     return this.getRequest(apiV2URL, endpoint, params);
   }
 
-  public getWebsite(endpoint: string, params?: Record<string, any>) {
+  public getWebsite(endpoint: string, params?: Record<string, RequestParams>) {
     return this.getRequest(webURL, endpoint, params);
   }
 
-  public async getURL(URI: string, params?: Record<string, any>) {
+  public async getURL(URI: string, params?: Record<string, RequestParams>) {
     const response = await this.request(URI, "GET", params);
     const data = await this.handleResponse(response);
     return data;
@@ -37,7 +39,7 @@ export class API {
 
   private buildRequestOptions(
     method: "GET" | "POST",
-    params?: Record<string, any>,
+    params?: Record<string, string | number | boolean>,
   ): RequestInit {
     const headers = new Headers(API.headers);
     let body = undefined;
@@ -53,13 +55,15 @@ export class API {
   private async request(
     url: string,
     method: "GET" | "POST",
-    params?: Record<string, any>,
+    params?: Record<string, RequestParams>,
   ) {
     const options = this.buildRequestOptions(method, params);
     const _url = new URL(url);
 
     if (method === "GET" && params) {
-      _url.search = new URLSearchParams(params).toString();
+      _url.search = new URLSearchParams(
+        params as Record<string, string>,
+      ).toString();
     }
 
     if (this.clientId) _url.searchParams.set("client_id", this.clientId);
@@ -83,7 +87,7 @@ export class API {
   private async getRequest(
     url: string,
     endpoint: string,
-    params?: Record<string, any>,
+    params?: Record<string, RequestParams>,
   ) {
     if (!this.clientId) await this.getClientId();
     if (endpoint.startsWith("/")) endpoint = endpoint.slice(1);
@@ -96,7 +100,7 @@ export class API {
     }
   }
 
-  public async post(endpoint: string, params?: Record<string, any>) {
+  public async post(endpoint: string, params?: Record<string, RequestParams>) {
     if (!this.clientId) await this.getClientId();
     if (endpoint.startsWith("/")) endpoint = endpoint.slice(1);
 
