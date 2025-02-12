@@ -1,6 +1,6 @@
 {
   "name": "@elluzion/soundcloud.ts",
-  "version": "0.6.4",
+  "version": "0.7.0-alpha0",
   "description": "Soundcloud API v2 wrapper with typings. Fully web-compatible.",
   "main": "dist/soundcloud.js",
   "types": "dist/soundcloud.d.ts",
