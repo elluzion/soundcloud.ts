@@ -10,6 +10,7 @@
     "build": "tsc",
     "test": "ts-mocha --timeout 30000 -p tsconfig.json test/**/*.spec.ts",
     "prepack": "bun run build",
+    "lint": "eslint src/**/*.ts",
     "publish": "npm publish"
   },
   "repository": {
@@ -38,15 +39,19 @@
     "prettier": "^3.5.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.20.0",
     "@types/chai": "^4.3.16",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.12.12",
     "chai": "^4.4.1",
     "dotenv": "^16.4.5",
+    "eslint": "^9.20.1",
+    "globals": "^15.15.0",
     "mocha": "^10.4.0",
     "ts-mocha": "^10.0.0",
     "typedoc": "^0.25.13",
-    "typescript": "^5.4.5"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0"
   },
   "directories": {
     "doc": "docs",
