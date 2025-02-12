@@ -1,7 +1,7 @@
 {
   "name": "@elluzion/soundcloud.ts",
-  "version": "0.6.3",
-  "description": "Soundcloud API v2 wrapper with typings.",
+  "version": "0.6.4",
+  "description": "Soundcloud API v2 wrapper with typings. Fully web-compatible.",
   "main": "dist/soundcloud.js",
   "types": "dist/soundcloud.d.ts",
   "scripts": {
@@ -9,11 +9,12 @@
     "docs": "typedoc",
     "build": "tsc",
     "test": "ts-mocha --timeout 30000 -p tsconfig.json test/**/*.spec.ts",
-    "prepack": "bun run build"
+    "prepack": "bun run build",
+    "publish": "npm publish"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Moebits/soundcloud.ts.git"
+    "url": "git+https://github.com/elluzion/soundcloud.ts.git"
   },
   "keywords": [
     "soundcloud",
